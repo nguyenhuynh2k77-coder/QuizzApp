@@ -36,6 +36,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function setupEventListeners() {
+    // --- XỬ LÝ CLICK VÀO LOGO QUAY VỀ TRANG CHÍNH ---
+    document.getElementById('app-logo')?.addEventListener('click', () => {
+        // Kiểm tra: Nếu đang ở màn hình làm bài thi (quiz-section) thì hỏi xác nhận trước
+        const quizSection = document.getElementById('quiz-section');
+        const isDoingQuiz = quizSection && !quizSection.classList.contains('hidden-section');
+
+        if (isDoingQuiz) {
+            if (!confirm('⚠️ Bạn đang làm bài thi. Bạn có chắc muốn rời đi để về trang chính không?')) {
+                return; // Hủy thao tác nếu người dùng chọn Cancel
+            }
+        }
+
+        // Chuyển thẳng về màn hình chính (Setup Section)
+        switchSection('setup-section');
+    });
     // --- AUTH & THEME ---
     setupAuthListeners();
     document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
