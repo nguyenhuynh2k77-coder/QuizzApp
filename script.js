@@ -460,19 +460,14 @@ function updateNavStatus() {
 
 // --- 6. NỘP BÀI & KẾT QUẢ ---
 function submitQuiz() {
-    if (confirm('Bạn có chắc chắn muốn nộp bài và xem kết quả không?')) {
-        state.isSubmitted = true;
-        
-        // Gọi hàm tính toán kết quả (đảm bảo hàm này đã có sẵn trong script.js của bạn)
-        if (typeof calculateResult === 'function') {
-            calculateResult();
-        }
-        
-        // Chuyển sang màn hình kết quả
-        switchSection('result-section');
+    state.isSubmitted = true;
+    
+    if (typeof calculateResult === 'function') {
+        calculateResult();
     }
+    
+    switchSection('result-section'); // Chuyển ngay sang màn hình kết quả
 }
-
 function calculateResult() {
     let correctCount = 0;
     
@@ -1002,11 +997,9 @@ async function deleteQuizById(quizId, title) {
 }
 
 function exitQuiz() {
-    if (confirm('Bạn có chắc chắn muốn thoát khỏi bài thi đang làm?')) {
-        if (state.questions && state.questions.length > 0) {
-            switchSection('preview-section'); // Quay lại danh sách câu
-        } else {
-            switchSection('setup-section');   // Quay lại màn hình nhập đề
-        }
+    if (state.questions && state.questions.length > 0) {
+        switchSection('preview-section'); // Quay lại danh sách câu hỏi
+    } else {
+        switchSection('setup-section');   // Quay lại trang chính
     }
 }
