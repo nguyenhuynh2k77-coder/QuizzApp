@@ -36,76 +36,61 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function setupEventListeners() {
-    setupAuthListeners(); // <-- Kích hoạt hệ thống Auth
-
-    // Gắn sự kiện cho nút "Lưu vào tài khoản"
-    document.getElementById('btn-save-account')?.addEventListener('click', saveCurrentQuizToAccount);
+    // --- AUTH & THEME ---
+    setupAuthListeners();
     document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
 
-    // --- Section 1: Nhập dữ liệu ---
+    // --- SECTION 1: NHẬP DỮ LIỆU ---
+    document.getElementById('btn-parse')?.addEventListener('click', handleDataInput);
+    document.getElementById('btn-clear-data')?.addEventListener('click', clearData);
+    // --- XỬ LÝ NÚT XÓA FILE WORD (.DOCX) ---
     const fileInput = document.getElementById('word-file');
     const btnRemoveFile = document.getElementById('btn-remove-file');
 
-    // 1. NGĂN TRÌNH DUYỆT NHỚ FILE CŨ KHI F5 (Luôn làm sạch ô tải file khi mở lại trang)
-    if (fileInput) {
-        fileInput.value = '';
-    }
-    btnRemoveFile?.classList.add('hidden');
-
-    // 2. Khi người dùng chọn file -> Hiện nút Xóa file
-    fileInput?.addEventListener('change', () => {
-        if (fileInput.files && fileInput.files.length > 0) {
+    // Hàm kiểm tra và bật/tắt nút Xóa file
+    const toggleRemoveButton = () => {
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
             btnRemoveFile?.classList.remove('hidden');
         } else {
             btnRemoveFile?.classList.add('hidden');
         }
-    });
+    };
 
-    // 3. Khi bấm nút "❌ Xóa file" -> Rút file ra khỏi ô chọn & ẩn nút
+    // 1. KÍCH HOẠT NGAY KHI LOAD TRANG (Khắc phục lỗi F5 bị mất nút X)
+    toggleRemoveButton();
+
+    // 2. Khi người dùng chọn file mới -> Kiểm tra lại
+    fileInput?.addEventListener('change', toggleRemoveButton);
+
+    // 3. Khi bấm nút "❌ Xóa file" -> Rút file ra & ẩn nút
     btnRemoveFile?.addEventListener('click', () => {
         if (fileInput) {
-            fileInput.value = '';
+            fileInput.value = ''; // Xóa sạch file trong ô input
         }
-        btnRemoveFile.classList.add('hidden');
+        toggleRemoveButton(); // Ẩn nút X đi
     });
 
-    document.getElementById('btn-parse')?.addEventListener('click', handleDataInput);
-    document.getElementById('btn-clear-data')?.addEventListener('click', clearData);
-    document.getElementById('btn-continue-saved')?.addEventListener('click', () => {
-        renderPreview();
-        switchSection('preview-section');
-    });
-
-    // --- Section 2: Preview ---
+    // --- SECTION 2: PREVIEW & LƯU TRỮ ---
     document.getElementById('btn-shuffle-questions')?.addEventListener('click', shuffleQuestions);
     document.getElementById('btn-shuffle-options')?.addEventListener('click', shuffleOptions);
     document.getElementById('btn-start-quiz')?.addEventListener('click', startQuiz);
     document.getElementById('btn-back-setup')?.addEventListener('click', () => switchSection('setup-section'));
+    document.getElementById('btn-save-account')?.addEventListener('click', saveCurrentQuizToAccount);
 
-    // --- Section 3: Quiz ---
-    document.getElementById('btn-exit-quiz')?.addEventListener('click', () => {
-        if(confirm('Bạn có chắc chắn muốn thoát? Quá trình làm bài hiện tại sẽ bị hủy.')) {
-            switchSection('setup-section');
-        }
-    });
+    // --- SECTION 3: QUIZ (CÁC NÚT ĐANG BỊ LIỆT CỦA BẠN Ở ĐÂY) ---
+    document.getElementById('btn-exit-quiz')?.addEventListener('click', exitQuiz);
     document.getElementById('btn-prev')?.addEventListener('click', prevQuestion);
     document.getElementById('btn-next')?.addEventListener('click', nextQuestion);
     document.getElementById('btn-submit')?.addEventListener('click', submitQuiz);
 
-    // --- Section 4: Result ---
+    // --- SECTION 4: KẾT QUẢ ---
     document.getElementById('btn-review')?.addEventListener('click', toggleReview);
     document.getElementById('btn-restart')?.addEventListener('click', () => {
         if(confirm('Bạn có chắc muốn làm lại từ đầu? Mọi đáp án sẽ bị xóa.')){
             resetQuiz();
         }
     });
-
-    // --- Modal Edit Events ---
-    document.getElementById('btn-close-modal')?.addEventListener('click', closeEditModal);
-    document.getElementById('btn-cancel-edit')?.addEventListener('click', closeEditModal);
-    document.getElementById('btn-save-edit')?.addEventListener('click', saveEdit);
 }
-
 // --- 3. ĐỌC DỮ LIỆU & PARSE (CORE LOGIC) ---
 async function handleDataInput() {
     const fileInput = document.getElementById('word-file');
@@ -965,5 +950,15 @@ async function deleteQuizById(quizId, title) {
         loadUserQuizzes();
     } catch (error) {
         alert("Lỗi xóa đề thi: " + error.message);
+    }
+}
+
+function exitQuiz() {
+    if (confirm('Bạn có chắc chắn muốn thoát khỏi bài thi đang làm?')) {
+        if (state.questions && state.questions.length > 0) {
+            switchSection('preview-section'); // Quay lại danh sách câu
+        } else {
+            switchSection('setup-section');   // Quay lại màn hình nhập đề
+        }
     }
 }
