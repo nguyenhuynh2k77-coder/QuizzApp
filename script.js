@@ -385,8 +385,8 @@ function startQuiz() {
     state.currentIndex = 0;
     state.isSubmitted = false;
 
-    renderQuestion();
-    renderQuestionGrid();
+    renderCurrentQuestion();  // Sửa từ renderQuestion thành renderCurrentQuestion
+    buildQuestionNav();
     switchSection('quiz-section');
     // 1. TÍNH NĂNG MỚI: Kiểm tra xem có câu nào chưa có đáp án đúng hoặc chưa có đáp án nào không
     const invalidIndex = state.questions.findIndex(q => {
