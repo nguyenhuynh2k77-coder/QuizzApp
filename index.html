@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Trắc Nghiệm Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- CDN Mammoth.js để đọc file Word -->
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <h1>📝 QuizApp Pro</h1>
+            
+            <!-- Khu vực Đăng nhập / Thông tin User -->
+            <div class="auth-container">
+                <button id="btn-login-google" class="btn btn-outline">🔑 Đăng nhập Google</button>
+                <div id="user-info" class="user-info hidden">
+                    <img id="user-avatar" src="" alt="Avatar" class="avatar">
+                    <span id="user-name">User</span>
+                    <button id="btn-logout" class="btn btn-danger btn-sm">Đăng xuất</button>
+                </div>
+                <button id="theme-toggle" class="btn-icon">🌙 Dark Mode</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Khu vực kho đề thi đã lưu của tài khoản (Mới) -->
+        <section id="my-quizzes-section" class="card hidden">
+            <h2>📚 Kho Đề Thi Của Tôi (<span id="saved-quizzes-count">0</span> đề)</h2>
+            <div id="quizzes-list" class="quizzes-grid">
+                <!-- Danh sách đề thi sẽ được render tự động qua JS -->
+            </div>
+        </section>
+       <!-- Section 1: Nhập dữ liệu -->
+        <section id="setup-section" class="card active-section">
+            <h2>1. Nhập Dữ Liệu Đề Thi</h2>
+            
+            <!-- Option 1: Tải file Word + Nút xóa file -->
+            <div class="input-group">
+                <label for="word-file">Tải lên file Word (.docx):</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="file" id="word-file" accept=".docx">
+                    <button id="btn-remove-file" class="btn btn-danger hidden" type="button" style="padding: 0.6rem 1rem; white-space: nowrap;">
+                        X 
+                    </button>
+                </div>
+            </div>
+            
+            <div class="divider">HOẶC</div>
+            
+            <!-- Option 2: Nhập văn bản trực tiếp -->
+            <div class="input-group">
+                <label for="raw-text">Nhập nội dung đề thi trực tiếp:</label>
+                <textarea id="raw-text" rows="8" placeholder="Câu 1: AI là gì?&#10;A. Internet&#10;B. Trí tuệ nhân tạo *&#10;C. Máy tính&#10;D. Robot"></textarea>
+            </div>
+            
+            <!-- Các nút thao tác -->
+            <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+                <button id="btn-parse" class="btn btn-primary">Xử lý dữ liệu</button>
+                <button id="btn-continue-saved" class="btn btn-success hidden">📂 Tiếp tục đề đã lưu</button>
+                <button id="btn-clear-data" class="btn btn-danger hidden">Xóa dữ liệu cũ (Đang lưu)</button>
+            </div>
+        </section>
+
+        <!-- Section 2: Xem trước và thiết lập -->
+        <section id="preview-section" class="card hidden-section">
+            <h2>2. Danh Sách Câu Hỏi (<span id="total-preview-count">0</span> câu)</h2>
+            
+            <div class="actions-group">
+                <button id="btn-shuffle-questions" class="btn btn-secondary">🔀 Trộn Câu Hỏi</button>
+                <button id="btn-shuffle-options" class="btn btn-secondary">🔀 Trộn Đáp Án</button>
+                <button id="btn-start-quiz" class="btn btn-primary">🚀 Bắt Đầu Làm Bài</button>
+                <button id="btn-save-account" class="btn btn-success hidden">💾 Lưu vào tài khoản</button>
+                <button id="btn-back-setup" class="btn btn-outline">Quay lại</button>
+            </div>
+
+            <div class="table-responsive">
+                <table id="preview-table">
+                    <thead>
+                        <tr>
+                            <th>Câu hỏi</th>
+                            <th>Các đáp án (Đáp án đúng màu xanh)</th>
+                            <th style="width: 100px; text-align: center;">Thao tác</th>
+                        </tr>
+                        
+                    </thead>
+                    <tbody id="preview-tbody">
+                        <!-- Render qua JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+       <!-- Section 3: Làm bài -->
+        <section id="quiz-section" class="hidden-section">
+            <div class="quiz-layout">
+                <!-- Nội dung câu hỏi -->
+                <div class="quiz-main card">
+                    <div class="quiz-header">
+                        <!-- Header: Số câu bên trái, Nút Thoát ra bên phải -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                            <h2 id="current-question-title" style="margin-bottom: 0;">Câu 1/10</h2>
+                            <button id="btn-exit-quiz" class="btn btn-danger" style="padding: 0.4rem 1rem;">🚪 Thoát ra</button>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="question-text" class="question-text">
+                        <!-- Text câu hỏi -->
+                    </div>
+
+                    <div id="options-container" class="options-grid">
+                        <!-- Render Radio buttons -->
+                    </div>
+
+                    <!-- Chỉ giữ lại duy nhất nút Nộp Bài ở đáy -->
+                    <div class="quiz-nav" style="display: flex; justify-content: center; margin-top: 2rem;">
+                        <button id="btn-submit" class="btn btn-success">Nộp Bài ✔</button>
+                    </div>
+                </div>
+
+                <!-- Thanh điều hướng số câu bên phải -->
+                <div class="quiz-sidebar card">
+                    <h3>Danh sách câu</h3>
+                    <div id="question-nav-grid" class="nav-grid">
+                        <!-- Render các nút số -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Kết quả -->
+        <section id="result-section" class="card hidden-section">
+            <h2>Kết Quả Bài Thi</h2>
+            
+            <div class="score-board">
+                <div class="score-circle">
+                    <span id="score-text">0.0</span>
+                    <small>Điểm</small>
+                </div>
+                <div class="score-stats">
+                    <p>Số câu đúng: <strong id="correct-count" class="text-success">0</strong></p>
+                    <p>Số câu sai: <strong id="wrong-count" class="text-danger">0</strong></p>
+                    <p>Tỷ lệ: <strong id="percentage-text">0%</strong></p>
+                </div>
+            </div>
+
+            <div class="actions-group text-center">
+                <button id="btn-review" class="btn btn-primary">Xem Chi Tiết Đáp Án</button>
+                <button id="btn-restart" class="btn btn-outline">Làm Lại</button>
+            </div>
+
+            <div id="review-container" class="review-list hidden">
+                <!-- Render review chi tiết -->
+            </div>
+        </section>
+        <!-- Modal Chỉnh Sửa Câu Hỏi (Thêm mới) -->
+        <div id="edit-modal" class="modal hidden">
+            <div class="modal-content card">
+                <div class="modal-header">
+                    <h3>✏️ Chỉnh Sửa Câu Hỏi</h3>
+                    <button onclick="closeEditModal()" class="btn-icon">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group">
+                        <label>Nội dung câu hỏi:</label>
+                        <textarea id="edit-q-text" rows="4"></textarea>
+                    </div>
+                    <div id="edit-options-container">
+                        <!-- Options sẽ được JS tự động sinh ra tại đây -->
+                    </div>
+                    <!-- Nút thêm đáp án MỚI -->
+                    <button onclick="addOptionToModal()" class="btn btn-outline" style="margin-top: 15px; width: 100%; border-style: dashed;">
+                        ➕ Thêm Đáp Án Mới
+                    </button>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="saveEdit()" class="btn btn-success">Lưu Thay Đổi</button>
+                    <button onclick="closeEditModal()" class="btn btn-secondary">Hủy</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
