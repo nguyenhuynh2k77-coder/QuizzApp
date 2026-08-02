@@ -74,6 +74,22 @@
         <section id="preview-section" class="card hidden-section">
             <h2>2. Danh Sách Câu Hỏi (<span id="total-preview-count">0</span> câu)</h2>
             
+            <div id="quiz-chunk-config" style="margin: 1rem 0; padding: 1rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius); display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <label for="chunk-size-select" style="font-weight: bold; color: var(--primary);">
+                🎯 Chế độ ôn tập:
+            </label>
+            <select id="chunk-size-select" class="btn btn-outline" style="padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer;">
+                <option value="all">Làm tất cả (Toàn bộ đề)</option>
+                <option value="20">Mỗi lần 20 câu</option>
+                <option value="30">Mỗi lần 30 câu</option>
+                <option value="50">Mỗi lần 50 câu</option>
+                <option value="100">Mỗi lần 100 câu</option>
+            </select>
+            <span id="chunk-info-text" class="text-muted" style="font-size: 0.9rem;">
+                <!-- JavaScript sẽ hiển thị thông báo cắt đề ở đây -->
+            </span>
+            </div>
+
             <div class="actions-group">
                 <button id="btn-shuffle-questions" class="btn btn-secondary">🔀 Trộn Câu Hỏi</button>
                 <button id="btn-shuffle-options" class="btn btn-secondary">🔀 Trộn Đáp Án</button>

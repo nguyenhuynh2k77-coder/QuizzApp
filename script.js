@@ -1,5 +1,6 @@
 // --- 1. STATE (TRẠNG THÁI ỨNG DỤNG) ---
 const state = {
+    originalQuestions: [],
     questions: [],          
     currentIndex: 0,        
     isSubmitted: false,     
@@ -108,6 +109,21 @@ function setupEventListeners() {
     // --- SECTION 4: KẾT QUẢ ---
     document.getElementById('btn-review')?.addEventListener('click', toggleReview);
     document.getElementById('btn-restart')?.addEventListener('click', resetQuiz);
+
+    // --- XỬ LÝ CHỌN CHẾ ĐỘ CHIA NHỎ ĐỀ THI ---
+    const chunkSelect = document.getElementById('chunk-size-select');
+    const chunkInfo = document.getElementById('chunk-info-text');
+
+    chunkSelect?.addEventListener('change', () => {
+        const total = state.originalQuestions.length || state.questions.length;
+        const val = chunkSelect.value;
+
+        if (val === 'all' || parseInt(val) >= total) {
+            chunkInfo.innerText = `Sẽ làm toàn bộ ${total} câu.`;
+        } else {
+            chunkInfo.innerText = `⚡ Sẽ ngẫu nhiên lấy ra ${val} câu từ tổng số ${total} câu để ôn tập.`;
+        }
+    });
 }
 // --- 3. ĐỌC DỮ LIỆU & PARSE (CORE LOGIC) ---
 async function handleDataInput() {
@@ -346,6 +362,32 @@ function shuffleOptions() {
 
 // --- 5. LOGIC LÀM BÀI QUIZ ---
 function startQuiz() {
+    // 0. Đảm bảo luôn lấy nguồn từ bộ đề gốc nếu có
+    if (state.originalQuestions && state.originalQuestions.length > 0) {
+        state.questions = [...state.originalQuestions];
+    } else {
+        state.originalQuestions = [...state.questions];
+    }
+
+    // 1. KIỂM TRA CHẾ ĐỘ CHIA NHỎ ĐỀ THI
+    const chunkSelect = document.getElementById('chunk-size-select');
+    if (chunkSelect && chunkSelect.value !== 'all') {
+        const limit = parseInt(chunkSelect.value);
+        if (limit < state.questions.length) {
+            // Trộn đều mảng gốc và chỉ cắt lấy đúng số lượng câu người dùng chọn
+            const shuffled = [...state.originalQuestions].sort(() => Math.random() - 0.5);
+            state.questions = shuffled.slice(0, limit);
+            console.log(`🎯 Đã cắt đề: Lấy ngẫu nhiên ${limit} câu / ${state.originalQuestions.length} câu gốc.`);
+        }
+    }
+
+    // 2. Các bước khởi tạo làm bài cũ của bạn giữ nguyên bên dưới
+    state.currentIndex = 0;
+    state.isSubmitted = false;
+
+    renderQuestion();
+    renderQuestionGrid();
+    switchSection('quiz-section');
     // 1. TÍNH NĂNG MỚI: Kiểm tra xem có câu nào chưa có đáp án đúng hoặc chưa có đáp án nào không
     const invalidIndex = state.questions.findIndex(q => {
         // Lỗi 1: Câu hỏi không có đáp án nào (A, B, C, D trống)
