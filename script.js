@@ -32,7 +32,14 @@ const DOC_ID = "my_current_quiz";
 document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
     setupEventListeners();
-    await loadFromFirebase();
+    
+    // Kiểm tra: Nếu người dùng truy cập bằng Link chia sẻ thì mở bài thi đó
+    const isShared = await checkSharedQuizFromUrl();
+    
+    // Nếu KHÔNG phải vào qua link chia sẻ thì mới tải đề đang làm dở trên Firebase
+    if (!isShared) {
+        await loadFromFirebase();
+    }
 });
 
 function setupEventListeners() {
@@ -958,6 +965,17 @@ async function loadUserQuizzes() {
                     </div>
                 </div>
                 <div class="quiz-card-actions">
+                    <div>
+                    <h3>${quizData.title || 'Đề thi không tên'}</h3>
+                    <div class="quiz-card-meta">
+                        <span>Số câu: <strong>${quizData.totalQuestions}</strong> câu</span>
+                    </div>
+                </div>
+                <div class="quiz-card-actions">
+                    <button class="btn btn-primary btn-sm btn-open-quiz" data-id="${doc.id}">📖 Làm bài</button>
+                    <button class="btn btn-secondary btn-sm btn-share-quiz" data-id="${doc.id}">🔗 Chia sẻ</button>
+                    <button class="btn btn-danger btn-sm btn-delete-quiz" data-id="${doc.id}">🗑️</button>
+                </div>
                     <button class="btn btn-primary btn-sm btn-open-quiz" data-id="${doc.id}">📖 Làm bài</button>
                     <button class="btn btn-danger btn-sm btn-delete-quiz" data-id="${doc.id}">🗑️</button>
                 </div>
@@ -965,6 +983,18 @@ async function loadUserQuizzes() {
 
             // Gắn sự kiện Mở làm bài
             card.querySelector('.btn-open-quiz').addEventListener('click', () => loadQuizById(doc.id, quizData));
+            // GẮN SỰ KIỆN CHIA SẺ LINK (MỚI)
+            card.querySelector('.btn-share-quiz').addEventListener('click', () => {
+                // Tạo link chứa uid của bạn và id của đề thi
+                const shareUrl = `${window.location.origin}${window.location.pathname}?uid=${state.currentUser.uid}&id=${doc.id}`;
+                
+                // Copy link vào bộ nhớ tạm
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    alert("🔗 Đã sao chép link đề thi vào bộ nhớ tạm!\n\n" + shareUrl + "\n\nBạn có thể gửi link này cho bạn bè vào làm ngay!");
+                }).catch(err => {
+                    prompt("Hãy copy đường link đề thi dưới đây để gửi cho bạn bè:", shareUrl);
+                });
+            });
             // Gắn sự kiện Xóa đề thi
             card.querySelector('.btn-delete-quiz').addEventListener('click', () => deleteQuizById(doc.id, quizData.title));
 
@@ -1015,4 +1045,43 @@ function exitQuiz() {
     } else {
         switchSection('setup-section');   // Quay về trang chính
     }
+}
+
+// --- XỬ LÝ LINK CHIA SẺ (URL PARAMETERS) ---
+async function checkSharedQuizFromUrl() {
+    // 1. Kiểm tra xem trên URL có biến ?uid=...&id=... không
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedUid = urlParams.get('uid');
+    const sharedId = urlParams.get('id');
+
+    if (sharedUid && sharedId) {
+        try {
+            console.log("🔍 Đang tải đề thi được chia sẻ...");
+            const docRef = db.collection('users').doc(sharedUid).collection('quizzes').doc(sharedId);
+            const docSnap = await docRef.get();
+
+            if (docSnap.exists) {
+                const quizData = docSnap.data();
+                
+                // 2. Nạp dữ liệu vào ứng dụng
+                state.questions = quizData.questions;
+                state.currentQuizId = sharedId;
+                state.currentIndex = 0;
+                state.isSubmitted = false;
+
+                alert(`🎉 Đã mở đề thi được chia sẻ: "${quizData.title || 'Đề thi trắc nghiệm'}"\nSố câu hỏi: ${quizData.totalQuestions} câu.`);
+
+                // 3. Chuyển thẳng sang màn hình danh sách câu hỏi để làm bài
+                renderPreview();
+                switchSection('preview-section');
+                return true; // Xác nhận đã tải qua link chia sẻ
+            } else {
+                alert("❌ Đề thi này không còn tồn tại hoặc đường link bị sai!");
+            }
+        } catch (error) {
+            console.error("Lỗi tải đề thi chia sẻ:", error);
+            alert("❌ Không thể mở đề thi được chia sẻ: " + error.message);
+        }
+    }
+    return false;
 }
