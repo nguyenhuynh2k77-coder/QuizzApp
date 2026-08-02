@@ -100,11 +100,7 @@ function setupEventListeners() {
 
     // --- SECTION 4: KẾT QUẢ ---
     document.getElementById('btn-review')?.addEventListener('click', toggleReview);
-    document.getElementById('btn-restart')?.addEventListener('click', () => {
-        if(confirm('Bạn có chắc muốn làm lại từ đầu? Mọi đáp án sẽ bị xóa.')){
-            resetQuiz();
-        }
-    });
+    document.getElementById('btn-restart')?.addEventListener('click', resetQuiz);
 }
 // --- 3. ĐỌC DỮ LIỆU & PARSE (CORE LOGIC) ---
 async function handleDataInput() {
@@ -462,11 +458,14 @@ function updateNavStatus() {
 function submitQuiz() {
     state.isSubmitted = true;
     
+    // Gọi hàm tính toán điểm số
     if (typeof calculateResult === 'function') {
         calculateResult();
     }
     
-    switchSection('result-section'); // Chuyển ngay sang màn hình kết quả
+    // Chuyển sang màn hình kết quả
+    switchSection('result-section');
+    saveState();
 }
 function calculateResult() {
     let correctCount = 0;
@@ -998,8 +997,8 @@ async function deleteQuizById(quizId, title) {
 
 function exitQuiz() {
     if (state.questions && state.questions.length > 0) {
-        switchSection('preview-section'); // Quay lại danh sách câu hỏi
+        switchSection('preview-section'); // Quay ngay về danh sách câu hỏi
     } else {
-        switchSection('setup-section');   // Quay lại trang chính
+        switchSection('setup-section');   // Quay về trang chính
     }
 }
