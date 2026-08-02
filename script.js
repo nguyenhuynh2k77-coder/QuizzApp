@@ -957,15 +957,9 @@ async function loadUserQuizzes() {
             const card = document.createElement('div');
             card.className = 'quiz-card-item';
 
+            // --- 1. CHỈ TẠO 1 LẦN DUY NHẤT CẤU TRÚC THẺ ---
             card.innerHTML = `
                 <div>
-                    <h3>${quizData.title || 'Đề thi không tên'}</h3>
-                    <div class="quiz-card-meta">
-                        <span>Số câu: <strong>${quizData.totalQuestions}</strong> câu</span>
-                    </div>
-                </div>
-                <div class="quiz-card-actions">
-                    <div>
                     <h3>${quizData.title || 'Đề thi không tên'}</h3>
                     <div class="quiz-card-meta">
                         <span>Số câu: <strong>${quizData.totalQuestions}</strong> câu</span>
@@ -976,24 +970,23 @@ async function loadUserQuizzes() {
                     <button class="btn btn-secondary btn-sm btn-share-quiz" data-id="${doc.id}">🔗 Chia sẻ</button>
                     <button class="btn btn-danger btn-sm btn-delete-quiz" data-id="${doc.id}">🗑️</button>
                 </div>
-                
             `;
 
-            // Gắn sự kiện Mở làm bài
+            // --- 2. GẮN SỰ KIỆN CHO 3 NÚT ---
+            // Nút Làm bài
             card.querySelector('.btn-open-quiz').addEventListener('click', () => loadQuizById(doc.id, quizData));
-            // GẮN SỰ KIỆN CHIA SẺ LINK (MỚI)
+            
+            // Nút Chia sẻ
             card.querySelector('.btn-share-quiz').addEventListener('click', () => {
-                // Tạo link chứa uid của bạn và id của đề thi
                 const shareUrl = `${window.location.origin}${window.location.pathname}?uid=${state.currentUser.uid}&id=${doc.id}`;
-                
-                // Copy link vào bộ nhớ tạm
                 navigator.clipboard.writeText(shareUrl).then(() => {
-                    alert("🔗 Đã sao chép link đề thi vào bộ nhớ tạm!\n\n" + shareUrl + "\n\nBạn có thể gửi link này cho bạn bè vào làm ngay!");
-                }).catch(err => {
+                    alert("🔗 Đã sao chép link đề thi vào bộ nhớ tạm!\n\n" + shareUrl);
+                }).catch(() => {
                     prompt("Hãy copy đường link đề thi dưới đây để gửi cho bạn bè:", shareUrl);
                 });
             });
-            // Gắn sự kiện Xóa đề thi
+
+            // Nút Xóa đề thi
             card.querySelector('.btn-delete-quiz').addEventListener('click', () => deleteQuizById(doc.id, quizData.title));
 
             listEl.appendChild(card);
