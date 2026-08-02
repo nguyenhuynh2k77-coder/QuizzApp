@@ -574,15 +574,30 @@ async function clearData() {
 
 // --- 7. UTILS & BẢO LƯU TRẠNG THÁI ---
 function switchSection(sectionId) {
-    document.querySelectorAll('section').forEach(sec => {
-        sec.classList.remove('active-section');
-        sec.classList.add('hidden-section');
+    // 1. Chỉ ẩn 4 màn hình chính của bài thi, KHÔNG ẩn kho đề thi (#my-quizzes-section)
+    const mainSections = ['setup-section', 'preview-section', 'quiz-section', 'result-section'];
+    
+    mainSections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add('hidden-section'); // Hoặc 'hidden' tùy class CSS bạn dùng
+        }
     });
-    const target = document.getElementById(sectionId);
-    if(target) {
-        target.classList.remove('hidden-section');
-        target.classList.add('active-section');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // 2. Hiện màn hình được chọn
+    const activeSection = document.getElementById(sectionId);
+    if (activeSection) {
+        activeSection.classList.remove('hidden-section');
+        activeSection.classList.remove('hidden');
+    }
+
+    // 3. Nếu quay về màn hình chính (setup-section) và ĐÃ đăng nhập -> Luôn hiện Kho đề thi
+    const myQuizzes = document.getElementById('my-quizzes-section');
+    if (sectionId === 'setup-section' && state.currentUser) {
+        myQuizzes?.classList.remove('hidden');
+    } else if (sectionId !== 'setup-section') {
+        // Khi vào phòng làm bài thi thì ẩn kho đề thi đi cho gọn màn hình
+        myQuizzes?.classList.add('hidden');
     }
 }
 
