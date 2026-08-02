@@ -976,9 +976,7 @@ async function loadUserQuizzes() {
                     <button class="btn btn-secondary btn-sm btn-share-quiz" data-id="${doc.id}">🔗 Chia sẻ</button>
                     <button class="btn btn-danger btn-sm btn-delete-quiz" data-id="${doc.id}">🗑️</button>
                 </div>
-                    <button class="btn btn-primary btn-sm btn-open-quiz" data-id="${doc.id}">📖 Làm bài</button>
-                    <button class="btn btn-danger btn-sm btn-delete-quiz" data-id="${doc.id}">🗑️</button>
-                </div>
+                
             `;
 
             // Gắn sự kiện Mở làm bài
