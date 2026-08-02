@@ -460,17 +460,17 @@ function updateNavStatus() {
 
 // --- 6. NỘP BÀI & KẾT QUẢ ---
 function submitQuiz() {
-    const unAnswered = state.questions.filter(q => !q.userChoice).length;
-    if (unAnswered > 0) {
-        if (!confirm(`Bạn còn ${unAnswered} câu chưa làm. Bạn có chắc chắn muốn nộp bài?`)) {
-            return;
+    if (confirm('Bạn có chắc chắn muốn nộp bài và xem kết quả không?')) {
+        state.isSubmitted = true;
+        
+        // Gọi hàm tính toán kết quả (đảm bảo hàm này đã có sẵn trong script.js của bạn)
+        if (typeof calculateResult === 'function') {
+            calculateResult();
         }
+        
+        // Chuyển sang màn hình kết quả
+        switchSection('result-section');
     }
-
-    state.isSubmitted = true;
-    saveState();
-    calculateResult();
-    switchSection('result-section');
 }
 
 function calculateResult() {
@@ -767,7 +767,8 @@ function createOptionRow(container, id, label, text, isCorrect) {
 }
 
 // Lưu mọi thay đổi
-function saveEdit() {
+// Lưu mọi thay đổi
+async function saveEdit() {
     if (!editingQuestionId) return;
     const q = state.questions.find(x => x.id === editingQuestionId);
     if (!q) return;
@@ -797,12 +798,29 @@ function saveEdit() {
         });
     });
 
-    // 4. TÍNH NĂNG MỚI: Tự động sắp xếp các đáp án theo bảng chữ cái A, B, C, D...
+    // 4. Tự động sắp xếp các đáp án theo bảng chữ cái A, B, C, D...
     newOptions.sort((a, b) => a.label.localeCompare(b.label));
 
     // 5. Ghi đè vào dữ liệu gốc
     q.options = newOptions;
 
+    // 6. QUAN TRỌNG: Nếu đang mở đề thi từ Kho tài khoản -> Cập nhật vĩnh viễn lên Firestore tài khoản!
+    if (state.currentUser && state.currentQuizId) {
+        try {
+            await db.collection('users')
+                    .doc(state.currentUser.uid)
+                    .collection('quizzes')
+                    .doc(state.currentQuizId)
+                    .update({
+                        questions: state.questions
+                    });
+            console.log("✅ Đã cập nhật vĩnh viễn câu hỏi vào kho đề thi tài khoản!");
+        } catch (error) {
+            console.error("❌ Lỗi cập nhật kho đề thi:", error);
+        }
+    }
+
+    // 7. Cập nhật state tạm & giao diện
     saveState();
     renderPreview();
     closeEditModal();
