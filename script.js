@@ -201,24 +201,29 @@ function parseTextToQuestions(rawText) {
             return;
         }
 
-        const oMatch = line.match(optionRegex);
+       const oMatch = line.match(optionRegex);
         if (oMatch && currentQuestion) {
-            let optText = oMatch[2];
+            // 1. Cắt sạch dấu cách/ký tự ẩn ở 2 đầu ngay lập tức
+            let optText = oMatch[2].trim();
             let isCorrect = false;
 
-            if (line.startsWith('*')) {
+            // 2. Nhận diện dấu * ở đầu dòng (*A. Nội dung) hoặc đầu đáp án (A. *Nội dung)
+            if (line.trim().startsWith('*') || optText.startsWith('*')) {
                 isCorrect = true;
-            } else if (optText.endsWith('*') || line.endsWith('*')) {
+                optText = optText.replace(/^\*\s*/, '').trim();
+            }
+
+            // 3. Nhận diện dấu * dính ở cuối đáp án (VD: "...tri thức chung.*" hoặc "...chung. *  ")
+            // Dùng Regex /\*\s*$/ để tóm gọn dấu * ở cuối câu dù phía sau có bao nhiêu dấu cách ẩn!
+            if (/\*\s*$/.test(optText)) {
                 isCorrect = true;
-                optText = optText.replace(/\*$/, '').trim();
-            } else if (optText.startsWith('*')) {
-                isCorrect = true;
-                optText = optText.substring(1).trim();
+                optText = optText.replace(/\*\s*$/, '').trim();
             }
             
-            if (optText.toLowerCase().includes('(đáp án đúng)')) {
+            // 4. Nhận diện thêm các kiểu phổ biến như (đáp án đúng) hoặc (*)
+            if (/\(đáp án đúng\)|\(\*\)/i.test(optText)) {
                 isCorrect = true;
-                optText = optText.replace(/\(đáp án đúng\)/i, '').trim();
+                optText = optText.replace(/\(đáp án đúng\)|\(\*\)/gi, '').trim();
             }
 
             currentQuestion.options.push({
