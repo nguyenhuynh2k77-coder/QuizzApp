@@ -135,6 +135,15 @@ async function handleDataInput() {
 function parseTextToQuestions(rawText) {
     let processedText = rawText;
 
+    // 1. Nếu dấu * bị gõ cách chữ A, B, C, D bởi khoảng trắng (VD: "* B." -> "*B.")
+    processedText = processedText.replace(/\*\s+([A-D][.:)\-])/gi, '*$1');
+
+    // 2. Nếu dấu * bị dính vào đuôi từ phía trước (VD: "chung.*B." -> "chung. *B.")
+    processedText = processedText.replace(/(\S)\*+([A-D][.:)\-])/gi, '$1 *$2');
+
+    // 3. QUAN TRỌNG NHẤT: Nếu dấu * bị rớt ở cuối câu A ngay trước khi xuống dòng B
+    // (VD: "...tri thức chung.*\nB." -> "...tri thức chung.\n*B.") -> Hút ngược về B!
+    processedText = processedText.replace(/\*\s*\r?\n\s*([A-D][.:)\-])/gi, '\n*$1');
     // 0. TIỀN XỬ LÝ DỮ LIỆU THÔNG MINH (Smart Pre-processing)
     
     // a. Tách câu hỏi dính chùm vào cuối đáp án
